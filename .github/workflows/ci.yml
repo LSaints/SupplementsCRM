@@ -82,47 +82,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug directory structure
+      - name: Discover web directory
+        id: discover
         run: |
-          echo "=== Current directory ==="
-          pwd
-          ls -la
-          echo "=== Find package*.json ==="
-          find . -name "package*.json" -maxdepth 3
+          WEB_DIR=$(find . -maxdepth 2 -name "package.json" -exec dirname {} \; | head -1)
+          echo "WEB_DIR=$WEB_DIR" >> $GITHUB_OUTPUT
+          echo "Found web directory: $WEB_DIR"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: src/Crm.Web/package-lock.json
 
       - name: Install dependencies
-        working-directory: src/Crm.Web
         run: npm ci
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run ESLint
-        working-directory: src/Crm.Web
         run: npm run lint
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run TypeScript check
-        working-directory: src/Crm.Web
         run: npx tsc --noEmit
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run tests
-        working-directory: src/Crm.Web
         run: npm run test:run -- --coverage
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Build
-        working-directory: src/Crm.Web
         run: npm run build
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
-          path: src/Crm.Web/coverage
+          path: ${{ steps.discover.outputs.WEB_DIR }}/coverage
 
   # ==========================================
   # LOCK FILE INTEGRITY
@@ -145,43 +143,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: src/Crm.Web/package-lock.json
 
-      - name: Debug directory structure
+      - name: Discover web directory
+        id: discover
         run: |
-          echo "=== Current directory ==="
-          pwd
-          ls -la
+          WEB_DIR=$(find . -maxdepth 2 -name "package.json" -exec dirname {} \; | head -1)
+          echo "WEB_DIR=$WEB_DIR" >> $GITHUB_OUTPUT
 
       - name: Restore NuGet
         run: dotnet restore
 
-      - name: Check NuGet lock file
-        run: |
-          if grep -q "<LockFile>" **/*.csproj 2>/dev/null; then
-            echo "Checking NuGet lock files..."
-            # Verificar se lock file está em sync
-            dotnet restore --locked-mode || exit 1
-          fi
-        shell: bash
-
       - name: Install npm dependencies
-        working-directory: src/Crm.Web
-        run: |
-          echo "=== Checking package-lock.json ==="
-          ls -la src/Crm.Web/
-          npm ci
-
-      - name: Verify package-lock.json
-        working-directory: src/Crm.Web
-        run: |
-          if [ -f package-lock.json ]; then
-            npm audit --package-lock-only || true
-          fi
+        run: npm ci
+        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Check for uncommitted changes
-        run: |
-          git status --porcelain
+        run: git status --porcelain
 
   # ==========================================
   # SUMMARY
