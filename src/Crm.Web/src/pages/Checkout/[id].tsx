@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -15,11 +15,7 @@ export function Checkout() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!id) return;
     try {
       const pedidoData = await checkout.getCheckoutData(id);
@@ -29,7 +25,11 @@ export function Checkout() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handlePagar = async () => {
     if (!id) return;

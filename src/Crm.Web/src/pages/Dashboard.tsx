@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, ShoppingCart, DollarSign, Package } from 'lucide-react';
 import { dashboard } from '@/services/api/dashboard';
@@ -18,6 +18,7 @@ export function Dashboard() {
     faturamentoTotal: 0,
   });
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -34,10 +35,17 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    loadData().finally(() => setLoading(false));
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+    const runLoadData = async () => {
+      await loadData();
+      setLoading(false);
+    };
+    runLoadData();
+    intervalRef.current = setInterval(loadData, 30000);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [loadData]);
 
   const statCards = [

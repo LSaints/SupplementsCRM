@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,11 +24,7 @@ export function ProdutosIndex() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     try {
       const data = await produtos.getAll(true);
       setItems(data);
@@ -37,7 +33,11 @@ export function ProdutosIndex() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadItems().then(() => {});
+  }, [loadItems]);
 
   const filteredItems = items.filter((item) =>
     item.nome.toLowerCase().includes(busca.toLowerCase())

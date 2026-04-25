@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -20,11 +20,7 @@ export function NovoPedido() {
   const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
   const [itens, setItens] = useState<{ produtoId: string; quantidade: number; produtoBusca: string }[]>([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [clientesData, produtosData] = await Promise.all([
         clientesApi.getAll(),
@@ -35,7 +31,11 @@ export function NovoPedido() {
     } catch (error) {
       console.error('Erro ao carregar:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData().then(() => {});
+  }, [loadData]);
 
   const addItem = () => {
     setItens([...itens, { produtoId: '', quantidade: 1, produtoBusca: '' }]);

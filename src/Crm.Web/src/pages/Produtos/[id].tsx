@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,15 +18,9 @@ export function EditarProduto() {
   const [preco, setPreco] = useState('');
   const [ativo, setAtivo] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      loadProduto(id);
-    }
-  }, [id]);
-
-  const loadProduto = async (id: string) => {
+  const loadProduto = useCallback(async (produtoId: string) => {
     try {
-      const data = await produtos.getById(id);
+      const data = await produtos.getById(produtoId);
       setNome(data.nome);
       setDescricao(data.descricao || '');
       setPreco(data.preco.toString());
@@ -36,7 +30,13 @@ export function EditarProduto() {
     } finally {
       setCarregando(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (id) {
+      loadProduto(id).then(() => {});
+    }
+  }, [id, loadProduto]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -33,7 +33,7 @@ export function EditarCliente() {
 
   useEffect(() => {
     if (id) {
-      loadCliente(id);
+      loadCliente(id).then(() => {});
     }
   }, [id, loadCliente]);
 

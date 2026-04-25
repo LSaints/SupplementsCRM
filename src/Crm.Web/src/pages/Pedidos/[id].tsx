@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +28,7 @@ export function EditarPedido() {
   const [status, setStatus] = useState('');
   const [itens, setItens] = useState<{ produtoId: string; quantidade: number }[]>([]);
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [clientesData, produtosData, pedidoData] = await Promise.all([
         clientesApi.getAll(),
@@ -56,7 +52,11 @@ export function EditarPedido() {
     } finally {
       setCarregando(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadData().then(() => {});
+  }, [loadData]);
 
   const addItem = () => {
     setItens([...itens, { produtoId: '', quantidade: 1 }]);
