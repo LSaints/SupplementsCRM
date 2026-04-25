@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16
+    container_name: crm-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Crm.Api/Dockerfile
+    container_name: crm-api
+    env_file:
+      - .env
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=crm;Username=postgres;Password=${POSTGRES_PASSWORD}
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm-network
+    restart: unless-stopped
+
+networks:
+  crm-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
