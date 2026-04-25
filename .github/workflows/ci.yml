@@ -8,7 +8,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0'
-  NODE_VERSION: '22'
+  NODE_VERSION: '20'
 
 jobs:
   # ==========================================
@@ -34,7 +34,6 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -48,7 +47,6 @@ jobs:
             --configuration Release \
             --verbosity normal \
             --logger "console;verbosity=normal"
-
       - name: Run integration tests (SQLite)
         run: |
           dotnet test tests/Crm.Api.Integration.Tests \
@@ -56,7 +54,6 @@ jobs:
             --configuration Release \
             --verbosity normal \
             --logger "console;verbosity=normal"
-
       - name: Check code format
         run: |
           dotnet format verify --verify-no-changes
@@ -70,7 +67,6 @@ jobs:
           path: |
             **/TestResults/*.trx
             **/TestResults/*.xml
-
   # ==========================================
   # FRONTEND CI (React + Vite)
   # ==========================================
@@ -82,52 +78,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug directory structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          ls -la
+          echo "=== Find package*.json ==="
+          find . -name "package*.json" -maxdepth 3
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-
-      - name: Find web directory
-        id: web
-        run: |
-          # Look for web directory with package.json
-          WEB_DIR=$(find . -name "package.json" -type f -exec dirname {} \; 2>/dev/null | grep -v node_modules | grep -E "(web|Web|client|Client)" | head -1)
-          if [ -z "$WEB_DIR" ]; then
-            WEB_DIR=$(find ./src -name "package.json" -type f -exec dirname {} \; 2>/dev/null | head -1)
-          fi
-          if [ -z "$WEB_DIR" ]; then
-            WEB_DIR=$(find . -name "package.json" -type f -exec dirname {} \; 2>/dev/null | grep -v node_modules | head -1)
-          fi
-          echo "WEB_DIR=$WEB_DIR" >> $GITHUB_OUTPUT
+          cache-dependency-path: src/Crm.Web/package-lock.json
 
       - name: Install dependencies
+        working-directory: src/Crm.Web
         run: npm ci
-        working-directory: ${{ steps.web.outputs.WEB_DIR }}
 
       - name: Run ESLint
+        working-directory: src/Crm.Web
         run: npm run lint
-        working-directory: ${{ steps.web.outputs.WEB_DIR }}
 
       - name: Run TypeScript check
+        working-directory: src/Crm.Web
         run: npx tsc --noEmit
-        working-directory: ${{ steps.web.outputs.WEB_DIR }}
 
       - name: Run tests
+        working-directory: src/Crm.Web
         run: npm run test:run -- --coverage
-        working-directory: ${{ steps.web.outputs.WEB_DIR }}
 
       - name: Build
+        working-directory: src/Crm.Web
         run: npm run build
-        working-directory: ${{ steps.web.outputs.WEB_DIR }}
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
-          path: ${{ steps.web.outputs.WEB_DIR }}/coverage
+          path: src/Crm.Web/coverage
 
+  
   # ==========================================
   # SUMMARY
   # ==========================================
@@ -144,7 +136,7 @@ jobs:
           echo "Frontend: ${{ needs.frontend.result }}"
           
           if [[ "${{ needs.backend.result }}" == "failure" ]] || \
-             [[ "${{ needs.frontend.result }}" == "failure" ]]; then
+             [[ "${{ needs.frontend.result }}" == "failure" ]] ||; then
             echo "CI failed!"
             exit 1
           fi
