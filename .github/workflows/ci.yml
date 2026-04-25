@@ -8,7 +8,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0'
-  NODE_VERSION: '25'
+  NODE_VERSION: '20'
 
 jobs:
   # ==========================================
@@ -82,11 +82,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug directory structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          ls -la
+          echo "=== Find package*.json ==="
+          find . -name "package*.json" -maxdepth 3
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: src/Crm.Web/package-lock.json
 
       - name: Install dependencies
         working-directory: src/Crm.Web
@@ -136,6 +145,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: src/Crm.Web/package-lock.json
+
+      - name: Debug directory structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          ls -la
 
       - name: Restore NuGet
         run: dotnet restore
@@ -151,7 +167,10 @@ jobs:
 
       - name: Install npm dependencies
         working-directory: src/Crm.Web
-        run: npm ci
+        run: |
+          echo "=== Checking package-lock.json ==="
+          ls -la src/Crm.Web/
+          npm ci
 
       - name: Verify package-lock.json
         working-directory: src/Crm.Web
