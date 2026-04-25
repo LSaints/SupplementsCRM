@@ -1,0 +1,20 @@
+{
+  "name": "crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CRM Backend + Frontend",
+  "scripts": {
+    "prepare": "husky install",
+    "test": "echo \"No root-level tests\" && exit 0"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
+  },
+  "lint-staged": {
+    "src/Crm.Web/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "vitest run --reporter=verbose"
+    ]
+  }
+}
