@@ -8,7 +8,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0'
-  NODE_VERSION: '20'
+  NODE_VERSION: '25'
 
 jobs:
   # ==========================================
@@ -82,13 +82,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Discover web directory
-        id: discover
-        run: |
-          WEB_DIR=$(find . -maxdepth 2 -name "package.json" -exec dirname {} \; | head -1)
-          echo "WEB_DIR=$WEB_DIR" >> $GITHUB_OUTPUT
-          echo "Found web directory: $WEB_DIR"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -96,31 +89,31 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        working-directory: src/Crm.Web
         run: npm ci
-        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run ESLint
+        working-directory: src/Crm.Web
         run: npm run lint
-        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run TypeScript check
+        working-directory: src/Crm.Web
         run: npx tsc --noEmit
-        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Run tests
+        working-directory: src/Crm.Web
         run: npm run test:run -- --coverage
-        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Build
+        working-directory: src/Crm.Web
         run: npm run build
-        working-directory: ${{ steps.discover.outputs.WEB_DIR }}
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
-          path: ${{ steps.discover.outputs.WEB_DIR }}/coverage
+          path: src/Crm.Web/coverage
 
   # ==========================================
   # SUMMARY
